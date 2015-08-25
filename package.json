@@ -1,0 +1,16 @@
+{
+  "name": "zandberg-oplaadpalen",
+  "description": "Informatie over de oplaadpalen in de wijk Zandberg-Oost, Breda",
+  "version": "1.0.0",
+  "author": "Jorrit Schippers <jorrit@ncode.nl>",
+  "dependencies": {
+    "rethinkdb": "^2.1.0"
+  },
+  "license": "ISC",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "test": "echo 'Nope'",
+    "db": "rethinkdb --bind all"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "db": {
+    "host": "localhost",
+    "port": 28015,
+    "db": "zandbergoplaadpalen",
+    "authKey": null
+  },
+  "oplaadpalen": {
+    "key": "YOURKEY",
+    "box": {
+      "bottomleft": "51.573232,4.777707",
+      "topright": "51.582001,4.790938"
+    }
+  }
+}
