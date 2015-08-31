@@ -10,7 +10,11 @@
   "main": "index.js",
   "private": true,
   "scripts": {
+    "pretest": "eslint src",
     "test": "echo 'Nope'",
     "db": "rethinkdb --bind all"
+  },
+  "devDependencies": {
+    "eslint": "^1.3.1"
   }
 }

@@ -1,0 +1,26 @@
+{
+  "parser": "babel-eslint",
+  "env": {
+    "browser": false,
+    "node": true
+  },
+  "rules": {
+    "quotes": [2, "single"],
+    "strict": [0],
+    "radix": [2],
+    "no-var": [2],
+    "no-const-assign": [2],
+    "prefer-template": [2],
+    "prefer-const": [2],
+    "no-unused-vars": [2]
+  },
+  "ecmaFeatures": {
+    "blockBindings": true,
+    "objectLiteralComputedProperties": true,
+    "arrowFunctions": true,
+    "defaultParams": true,
+    "forOf": true,
+    "destructuring": true,
+    "templateStrings": true
+  }
+}

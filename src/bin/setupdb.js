@@ -35,8 +35,12 @@ function checkTables(conn) {
     },
     'status': {
       'primary_key': 'datum'
-    }
-  }
+    },
+    'oplaadacties': {
+      'primary_key': 'id'
+    },
+  };
+
   return new Promise(function(resolve, reject) {
     const db = r.db(config.db);
     db.tableList().run(conn, function(err, result) {
@@ -47,7 +51,7 @@ function checkTables(conn) {
 
       let numCreated = 0;
 
-      for(var tableName in tables) {
+      for(const tableName in tables) {
         if (result.indexOf(tableName) !== -1) {
           console.log(`-> ${tableName} exists`);
           numCreated++;
