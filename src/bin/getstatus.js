@@ -12,72 +12,88 @@ async function getstatus() {
   console.log('Fetching palen ...');
   const now = new Date();
   const palen = r.db(config.db.db).table('palen');
-  const status = r.db(config.db.db).table('status');
+  //const status = r.db(config.db.db).table('status');
   const oplaadacties = r.db(config.db.db).table('oplaadacties');
 
   const statussesToInsert = [];
 
-  const apiStatus = await r.http(url).run(conn);
-  const availability = await palen.outerJoin(apiStatus,
-    (p, a) => a('id').coerceTo('number').eq(p('id'))).run(conn);
+  // TODO: status ophalen via fetch()?
+  let apiStatus = await r.http(url).run(conn);
+  apiStatus = await apiStatus.toArray();
+  apiStatus = apiStatus.map((av) => {
+    av.id = parseInt(av.id, 10);
+    av.available = parseInt(av.available, 10);
+    av.failure = parseInt(av.failure, 10);
+    av.nroutlets = parseInt(av.nroutlets, 10);
+    av.occupied = parseInt(av.occupied, 10);
+    return av;
+  });
+
+  let allPalen = await palen.run(conn);
+  allPalen = await allPalen.toArray();
 
   // The promise is only needed because of
   // https://github.com/rethinkdb/rethinkdb/issues/4780
-  await new Promise(function(resolve, reject) {
-    availability.each(async (err, { left: paal, right: av }) => {
-      if(err) reject(err);
+  await Promise.all(allPalen.map(async (paal) => {
+    const av = apiStatus.find(s => s.id == paal.id);
+    const outputBuffer = [];
 
-      // TODO: als av leeg is: availability zonder paal. Warning!
+    if (!paal.realtimestatus && !av) {
+      return;
+    }
+    if (!av) {
+      console.log(`${paal.address}\n-> Geen status!`);
+      return;
+    }
 
-      av.id = parseInt(av.id, 10);
-      av.available = parseInt(av.available, 10);
-      av.failure = parseInt(av.failure, 10);
-      av.nroutlets = parseInt(av.nroutlets, 10);
-      av.occupied = parseInt(av.occupied, 10);
-      av.date = now;
+    outputBuffer.push(`${paal.address}: ${av.occupied}/${av.nroutlets}`);
 
-      statussesToInsert.push(av);
+    if (av.failure > 0) {
+      outputBuffer.push(`-> ${av.failure} defect!`);
+    }
 
-      console.log(`${paal.address}: ${av.occupied}/${av.nroutlets}`);
-      if (av.failure > 0) {
-        console.log(`-> ${av.failure} defect!`);
+    statussesToInsert.push(av);
+
+    let currentOplaadActies = paal.currentOplaadActies || [];
+    // There are new charging cars.
+    if (av.occupied > currentOplaadActies.length) {
+      const started = av.occupied - currentOplaadActies.length;
+      outputBuffer.push(`-> ${started} started!`);
+      for(let i = 0; i < started; i++) {
+        const oplaadActie = {
+          paal: paal.id,
+          start: now,
+          end: null
+        };
+
+        const result = await oplaadacties.insert(oplaadActie).run(conn);
+        oplaadActie.id = result.generated_keys[0];
+        currentOplaadActies.push(oplaadActie.id);
       }
-
-      if (!paal.currentOplaadActies) {
-        paal.currentOplaadActies = [];
-      }
-      const currentOplaadActies = paal.currentOplaadActies;
-      if (av.occupied > currentOplaadActies.length) {
-        const started = av.occupied - currentOplaadActies.length;
-        console.log(`-> ${started} started!`);
-        for(let i = 0; i < started; i++) {
-          const oplaadActie = {
-            id: await r.uuid().run(conn),
-            paal: paal.id,
-            start: now,
-            end: null,
-          };
-          console.log(oplaadActie);
-          currentOplaadActies.push(oplaadActie);
-          await oplaadacties.insert(oplaadActie).run(conn);
+      await palen.get(paal.id).update({currentOplaadActies}).run(conn);
+    }
+    // Some cars have left.
+    if (av.occupied < currentOplaadActies.length) {
+      const stopped = currentOplaadActies.length - av.occupied;
+      outputBuffer.push(`-> ${stopped} stopped!`);
+      // Remove each stopped actie.
+      for(let i = 0; i < stopped; i++) {
+        let toRemoveId = currentOplaadActies[0];
+        currentOplaadActies = currentOplaadActies.slice(1);
+        // Legacy.
+        if (toRemoveId.id) {
+          console.log('Legacy!');
+          toRemoveId = toRemoveId.id;
         }
-        await palen.get(paal.id).update(paal).run(conn);
+        await oplaadacties.get(toRemoveId).update({ end: now }).run(conn);
       }
-      if (av.occupied < currentOplaadActies.length) {
-        const stopped = currentOplaadActies.length - av.occupied;
-        console.log(`-> ${stopped} stopped!`);
-        // Remove each stopped actie.
-        for(let i = 0; i < stopped; i++) {
-          const toRemove = currentOplaadActies[0];
-          currentOplaadActies.slice(0, 1); // TODO: test
-          toRemove.end = now;
-          await oplaadacties.get(toRemove.id).update(toRemove).run(conn);
-        }
-        // Save the paal.
-        await palen.get(paal.id).update(paal).run(conn);
-      }
-    }, resolve);
-  });
+      // Save the paal.
+      await palen.get(paal.id).update({currentOplaadActies}).run(conn);
+    }
+
+    // Output.
+    console.log(outputBuffer.join('\n'));
+  }));
 
   // TODO: insert statussesToInsert.
   await conn.close();

@@ -1,6 +1,6 @@
 const r = require('rethinkdb');
 const config = require('../../config.json').db;
-
+// TODO: Promises
 function checkDb(conn) {
   return new Promise(function(resolve, reject) {
     r.dbList().run(conn, function(err, result) {
@@ -14,7 +14,7 @@ function checkDb(conn) {
         resolve();
       } else {
         console.log(`-> creating ${config.db}`);
-        r.dbCreate(config.db).run(conn, function(err, result) {
+        r.dbCreate(config.db).run(conn, function(err) {
           if (err) {
             reject(Error(err));
             return;
@@ -38,7 +38,7 @@ function checkTables(conn) {
     },
     'oplaadacties': {
       'primary_key': 'id'
-    },
+    }
   };
 
   return new Promise(function(resolve, reject) {

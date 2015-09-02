@@ -27,6 +27,10 @@ async function getoplaadpalen() {
         console.log(`-> Zelfde!`);
       } else if(result.replaced) {
         console.log(`-> Vervangen!`);
+        console.log(`Nieuw:`);
+        console.log(apiPaal);
+        console.log(`Oud:`);
+        console.log(dbPaal);
       }
     }
   }
@@ -38,10 +42,10 @@ async function getoplaadpalen() {
   for(let i = 0; i < dbPalenObsolete.length; i++) {
     const dbPaalObsolete = dbPalenObsolete[i];
     console.log(`Paal ${dbPaalObsolete.id}: ${dbPaalObsolete.address}`);
-    const result = await table.get(dbPaalObsolete.id).delete().run(conn);
+    await table.get(dbPaalObsolete.id).delete().run(conn);
     console.log(`-> Verwijderd :( !`);
     // FIXME: data verwijderen!
-  };
+  }
 
   await table.sync().run(conn);
 
