@@ -14,7 +14,6 @@ async function checkDb() {
 }
 
 async function checkTables() {
-  const tableCount = 2;
   const tables = {
     'palen': {
       'primary_key': 'id',
