@@ -17,7 +17,8 @@
     "no-useless-call": [2],
     "no-void": [2],
     "no-sequences": [2],
-    "no-console": [0]
+    "no-console": [0],
+    "comma-dangle": [2, "always-multiline"]
   },
   "ecmaFeatures": {
     "blockBindings": true,
