@@ -12,7 +12,7 @@ async function getstatus() {
   console.log('Fetching palen ...');
   const now = new Date();
   const palen = r.db(config.db.db).table('palen');
-  //const status = r.db(config.db.db).table('status');
+  const status = r.db(config.db.db).table('status');
   const oplaadacties = r.db(config.db.db).table('oplaadacties');
 
   const statussesToInsert = [];
@@ -94,6 +94,13 @@ async function getstatus() {
     // Output.
     console.log(outputBuffer.join('\n'));
   }));
+
+  if (statussesToInsert.length > 0) {
+    await status.insert({
+      datum: now,
+      status: statussesToInsert,
+    }).run(conn);
+  }
 
   // TODO: insert statussesToInsert.
   await conn.close();
