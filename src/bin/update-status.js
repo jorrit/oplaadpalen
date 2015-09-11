@@ -3,7 +3,7 @@ const config = require('../../config.json');
 
 let conn;
 
-async function getstatus() {
+async function updatestatus() {
   const url = `http://oplaadpalen.nl/api/availability/${config.oplaadpalen.key}/json`;
 
   conn = await r.connect(config.db);
@@ -107,7 +107,7 @@ async function getstatus() {
   console.log('Connection closed');
 }
 
-getstatus().catch(function(e) {
+updatestatus().catch(function(e) {
   console.log(e);
   conn.close();
 });

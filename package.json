@@ -18,7 +18,7 @@
     "pretest": "eslint src",
     "test": "echo 'Nope'",
     "setupdb": "babel-node src/bin/setupdb.js",
-    "getoplaadpalen": "babel-node src/bin/getoplaadpalen.js",
-    "getstatus": "babel-node src/bin/getstatus.js"
+    "update-oplaadpalen": "babel-node src/bin/update-oplaadpalen.js",
+    "update-status": "babel-node src/bin/update-status.js"
   }
 }

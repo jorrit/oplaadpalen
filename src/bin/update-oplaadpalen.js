@@ -1,10 +1,12 @@
 const r = require('rethinkdb');
 const config = require('../../config.json');
 
-async function getoplaadpalen() {
+let conn;
+
+async function updateoplaadpalen() {
   const url = `http://oplaadpalen.nl/api/chargingpoints/${config.oplaadpalen.key}/json?box=${config.oplaadpalen.box.bottomleft},${config.oplaadpalen.box.topright}`;
 
-  const conn = await r.connect(config.db);
+  conn = await r.connect(config.db);
   console.log('Connection opened');
   const table = await r.db(config.db.db).table('palen');
 
@@ -53,6 +55,7 @@ async function getoplaadpalen() {
   console.log('Connection closed');
 }
 
-getoplaadpalen().catch(function(e) {
+updateoplaadpalen().catch(function(e) {
   console.log(e);
+  conn.close();
 });
