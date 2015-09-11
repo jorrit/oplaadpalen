@@ -1,96 +1,92 @@
 const r = require('rethinkdb');
 const config = require('../../config.json').db;
-// TODO: Promises
-function checkDb(conn) {
-  return new Promise(function(resolve, reject) {
-    r.dbList().run(conn, function(err, result) {
-      if (err) {
-        reject(err);
-        return;
-      }
 
-      if (result.indexOf(config.db) !== -1) {
-        console.log(`-> ${config.db} exists`);
-        resolve();
-      } else {
-        console.log(`-> creating ${config.db}`);
-        r.dbCreate(config.db).run(conn, function(err) {
-          if (err) {
-            reject(Error(err));
-            return;
-          }
-          console.log(`-> created ${config.db}`);
-          resolve();
-        });
-      }
-    });
-  });
+let conn;
+
+// TODO: Promises
+async function checkDb() {
+  const dbs = await r.dbList().run(conn);
+
+  if (dbs.indexOf(config.db) === -1) {
+    await r.dbCreate(config.db).run(conn);
+    console.log(`-> ${config.db} created`);
+  }
 }
 
-function checkTables(conn) {
+async function checkTables() {
   const tableCount = 2;
   const tables = {
     'palen': {
-      'primary_key': 'id'
+      'primary_key': 'id',
     },
     'status': {
-      'primary_key': 'datum'
+      'primary_key': 'datum',
     },
     'oplaadacties': {
-      'primary_key': 'id'
-    }
+      'primary_key': 'id',
+    },
   };
 
-  return new Promise(function(resolve, reject) {
-    const db = r.db(config.db);
-    db.tableList().run(conn, function(err, result) {
-      if (err) {
-        reject(Error(err));
-        return;
+  const db = r.db(config.db);
+  const dbTables = await db.tableList().run(conn);
+
+  for (const tableName in tables) {
+    if (dbTables.indexOf(tableName) === -1) {
+      await db.tableCreate(tableName, tables[tableName]).run(conn);
+      console.log(`-> ${tableName} created`);
+    }
+  }
+}
+
+async function checkIndices() {
+  const indices = {
+    oplaadacties: {
+      paal: true,
+      start: true,
+    },
+  };
+
+  const db = r.db(config.db);
+
+  for (const tableName in indices) {
+    const dbIndices = await db.table(tableName).indexList().run(conn);
+    for (const indexName in indices[tableName]) {
+      if (dbIndices.indexOf(indexName) !== -1) {
+        continue;
       }
 
-      let numCreated = 0;
-
-      for(const tableName in tables) {
-        if (result.indexOf(tableName) !== -1) {
-          console.log(`-> ${tableName} exists`);
-          numCreated++;
-        } else {
-          db.tableCreate(tableName, tables[tableName]).run(conn, function(err) {
-            if (err) {
-              reject(Error(err));
-              return;
-            }
-
-            console.log(`-> ${tableName} created`);
-
-            numCreated++;
-            if (numCreated === tableCount) {
-              resolve();
-            }
-          })
-        }
+      const index = indices[tableName][indexName];
+      if (index === true) {
+        await db.table(tableName).indexCreate(indexName).run(conn);
+      } else {
+        await db.table(tableName).indexCreate(indexName, index).run(conn);
       }
-
-      resolve();
-    });
-  });
+      console.log(`-> ${tableName}.${indexName} created`);
+    }
+  }
 }
 
 async function setupdb() {
-  const conn = await r.connect(config);
+  conn = await r.connect(config);
   console.log('Connection opened');
 
   // Database.
   console.log(`Checking for database ${config.db}`);
-  await checkDb(conn);
+  await checkDb();
 
   // Tables.
   console.log(`Checking for tables in ${config.db}`);
-  await checkTables(conn);
+  await checkTables();
+
+  // Indices.
+  console.log(`Checking for indices in ${config.db}`);
+  await checkIndices();
 
   await conn.close();
   console.log('Connection closed');
 }
 
-setupdb();
+setupdb().catch(function(e) {
+  console.error(e);
+  conn.close();
+});

@@ -63,7 +63,7 @@ async function getstatus() {
         const oplaadActie = {
           paal: paal.id,
           start: now,
-          end: null
+          end: null,
         };
 
         const result = await oplaadacties.insert(oplaadActie).run(conn);
