@@ -5,6 +5,8 @@
   "author": "Jorrit Schippers <jorrit@ncode.nl>",
   "dependencies": {
     "babel": "^5.8.23",
+    "chalk": "^1.1.1",
+    "commander": "^2.8.1",
     "rethinkdb": "^2.1.1"
   },
   "devDependencies": {
@@ -17,8 +19,8 @@
     "db": "rethinkdb --bind all",
     "pretest": "eslint src",
     "test": "echo 'Nope'",
-    "setupdb": "babel-node src/bin/setupdb.js",
-    "update-oplaadpalen": "babel-node src/bin/update-oplaadpalen.js",
-    "update-status": "babel-node src/bin/update-status.js"
+    "setupdb": "src/bin/setupdb.js",
+    "update-oplaadpalen": "src/bin/update-oplaadpalen.js",
+    "update-status": "src/bin/update-status.js"
   }
 }

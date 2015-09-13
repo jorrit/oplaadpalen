@@ -1,5 +1,9 @@
+#!/usr/bin/env babel-node
+
 const r = require('rethinkdb');
 const config = require('../../config.json');
+import chalk from 'chalk';
+import { log, error, run } from './base.js';
 
 let conn;
 
@@ -7,9 +11,9 @@ async function updatestatus() {
   const url = `http://oplaadpalen.nl/api/availability/${config.oplaadpalen.key}/json`;
 
   conn = await r.connect(config.db);
-  console.log('Connection opened');
+  log(chalk.gray('Connection opened'));
 
-  console.log('Fetching palen ...');
+  log('Fetching palen ...');
   const now = new Date();
   const palen = r.db(config.db.db).table('palen');
   const status = r.db(config.db.db).table('status');
@@ -42,13 +46,16 @@ async function updatestatus() {
       return;
     }
     if (!av) {
-      console.log(`${paal.address}\n-> Geen status!`);
+      error(`${paal.address}\n-> Geen status!`);
       return;
     }
 
     outputBuffer.push(`${paal.address}: ${av.occupied}/${av.nroutlets}`);
 
+    let fail = false;
+
     if (av.failure > 0) {
+      fail = true;
       outputBuffer.push(`-> ${av.failure} defect!`);
     }
 
@@ -92,9 +99,14 @@ async function updatestatus() {
     }
 
     // Output.
-    console.log(outputBuffer.join('\n'));
+    if (fail) {
+      error(outputBuffer.join('\n'));
+    } else {
+      log(outputBuffer.join('\n'));
+    }
   }));
 
+  // Insert statussesToInsert.
   if (statussesToInsert.length > 0) {
     await status.insert({
       datum: now,
@@ -102,12 +114,8 @@ async function updatestatus() {
     }).run(conn);
   }
 
-  // TODO: insert statussesToInsert.
   await conn.close();
-  console.log('Connection closed');
+  log(chalk.gray('Connection closed'));
 }
 
-updatestatus().catch(function(e) {
-  console.log(e);
-  conn.close();
-});
+run(updatestatus, conn);

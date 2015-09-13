@@ -1,5 +1,9 @@
+#!/usr/bin/env babel-node
+
 const r = require('rethinkdb');
 const config = require('../../config.json').db;
+const chalk = require('chalk');
+import { log, run } from './base.js';
 
 let conn;
 
@@ -9,7 +13,7 @@ async function checkDb() {
 
   if (dbs.indexOf(config.db) === -1) {
     await r.dbCreate(config.db).run(conn);
-    console.log(`-> ${config.db} created`);
+    log(chalk.green(`-> ${config.db} created`));
   }
 }
 
@@ -32,7 +36,7 @@ async function checkTables() {
   for (const tableName in tables) {
     if (dbTables.indexOf(tableName) === -1) {
       await db.tableCreate(tableName, tables[tableName]).run(conn);
-      console.log(`-> ${tableName} created`);
+      log(chalk.green(`-> ${tableName} created`));
     }
   }
 }
@@ -60,32 +64,29 @@ async function checkIndices() {
       } else {
         await db.table(tableName).indexCreate(indexName, index).run(conn);
       }
-      console.log(`-> ${tableName}.${indexName} created`);
+      log(chalk.green(`-> ${tableName}.${indexName} created`));
     }
   }
 }
 
 async function setupdb() {
   conn = await r.connect(config);
-  console.log('Connection opened');
+  log(chalk.grey('Connection opened'));
 
   // Database.
-  console.log(`Checking for database ${config.db}`);
+  log(`Checking for database ${config.db}`);
   await checkDb();
 
   // Tables.
-  console.log(`Checking for tables in ${config.db}`);
+  log(`Checking for tables in ${config.db}`);
   await checkTables();
 
   // Indices.
-  console.log(`Checking for indices in ${config.db}`);
+  log(`Checking for indices in ${config.db}`);
   await checkIndices();
 
   await conn.close();
-  console.log('Connection closed');
+  log(chalk.grey('Connection closed'));
 }
 
-setupdb().catch(function(e) {
-  console.error(e);
-  conn.close();
-});
+run(setupdb, conn);

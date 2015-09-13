@@ -1,5 +1,9 @@
+#!/usr/bin/env babel-node
+
 const r = require('rethinkdb');
 const config = require('../../config.json');
+const chalk = require('chalk');
+import { log, run } from './base.js';
 
 let conn;
 
@@ -7,7 +11,7 @@ async function updateoplaadpalen() {
   const url = `http://oplaadpalen.nl/api/chargingpoints/${config.oplaadpalen.key}/json?box=${config.oplaadpalen.box.bottomleft},${config.oplaadpalen.box.topright}`;
 
   conn = await r.connect(config.db);
-  console.log('Connection opened');
+  log(chalk.grey('Connection opened'));
   const table = await r.db(config.db.db).table('palen');
 
   let apiPalen = await r.http(url).run(conn);
@@ -18,21 +22,21 @@ async function updateoplaadpalen() {
     const apiPaal = apiPalen[i];
     apiPaal.id = parseInt(apiPaal.id, 10);
     apiPaal.nroutlets = parseInt(apiPaal.nroutlets, 10);
-    console.log(`Paal ${apiPaal.id}: ${apiPaal.address}`);
+    log(`Paal ${apiPaal.id}: ${apiPaal.address}`);
     const dbPaal = await table.get(apiPaal.id).run(conn);
     if (dbPaal === null) {
       await table.insert(apiPaal).run(conn);
-      console.log(`-> Toegevoegd!`);
+      log(chalk.green(`-> Toegevoegd!`));
     } else {
       const result = await table.get(apiPaal.id).update(apiPaal).run(conn);
       if (result.unchanged === 1) {
-        console.log(`-> Zelfde!`);
+        log(`-> Zelfde!`);
       } else if(result.replaced) {
-        console.log(`-> Vervangen!`);
-        console.log(`Nieuw:`);
-        console.log(apiPaal);
-        console.log(`Oud:`);
-        console.log(dbPaal);
+        log(`-> Vervangen!`);
+        log(`Nieuw:`);
+        log(apiPaal);
+        log(`Oud:`);
+        log(dbPaal);
       }
     }
   }
@@ -43,19 +47,16 @@ async function updateoplaadpalen() {
   dbPalenObsolete = await dbPalenObsolete.toArray();
   for(let i = 0; i < dbPalenObsolete.length; i++) {
     const dbPaalObsolete = dbPalenObsolete[i];
-    console.log(`Paal ${dbPaalObsolete.id}: ${dbPaalObsolete.address}`);
+    log(`Paal ${dbPaalObsolete.id}: ${dbPaalObsolete.address}`);
     await table.get(dbPaalObsolete.id).delete().run(conn);
-    console.log(`-> Verwijderd :( !`);
+    log(chalk.cyan(`-> Verwijderd :( !`));
     // FIXME: data verwijderen!
   }
 
   await table.sync().run(conn);
 
   await conn.close();
-  console.log('Connection closed');
+  log(chalk.grey('Connection closed'));
 }
 
-updateoplaadpalen().catch(function(e) {
-  console.log(e);
-  conn.close();
-});
+run(updateoplaadpalen, conn);
