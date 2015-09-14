@@ -54,9 +54,10 @@ async function updatestatus() {
 
     let fail = false;
 
-    if (av.failure > 0) {
+    if (av.failure != (paal.currentFailure || 0)) {
       fail = true;
-      outputBuffer.push(`-> ${av.failure} defect!`);
+      outputBuffer.push(`-> ${av.failure} defect, was ${paal.currentFailure || 0}`);
+      await palen.get(paal.id).update({currentFailure: av.failure}).run(conn);
     }
 
     statussesToInsert.push(av);
