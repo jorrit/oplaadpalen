@@ -5,10 +5,8 @@ const config = require('../../config.json').db;
 const chalk = require('chalk');
 import { log, run } from './base.js';
 
-let conn;
-
 // TODO: Promises
-async function checkDb() {
+async function checkDb(conn) {
   const dbs = await r.dbList().run(conn);
 
   if (dbs.indexOf(config.db) === -1) {
@@ -17,7 +15,7 @@ async function checkDb() {
   }
 }
 
-async function checkTables() {
+async function checkTables(conn) {
   const tables = {
     'palen': {
       'primary_key': 'id',
@@ -41,7 +39,7 @@ async function checkTables() {
   }
 }
 
-async function checkIndices() {
+async function checkIndices(conn) {
   const indices = {
     oplaadacties: {
       paal: true,
@@ -69,24 +67,18 @@ async function checkIndices() {
   }
 }
 
-async function setupdb() {
-  conn = await r.connect(config);
-  log(chalk.grey('Connection opened'));
-
+async function setupdb(conn) {
   // Database.
   log(`Checking for database ${config.db}`);
-  await checkDb();
+  await checkDb(conn);
 
   // Tables.
   log(`Checking for tables in ${config.db}`);
-  await checkTables();
+  await checkTables(conn);
 
   // Indices.
   log(`Checking for indices in ${config.db}`);
-  await checkIndices();
-
-  await conn.close();
-  log(chalk.grey('Connection closed'));
+  await checkIndices(conn);
 }
 
-run(setupdb, conn);
+run(setupdb);

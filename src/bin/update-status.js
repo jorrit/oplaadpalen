@@ -2,16 +2,10 @@
 
 const r = require('rethinkdb');
 const config = require('../../config.json');
-import chalk from 'chalk';
 import { log, error, run } from './base.js';
 
-let conn;
-
-async function updatestatus() {
+async function updatestatus(conn) {
   const url = `http://oplaadpalen.nl/api/availability/${config.oplaadpalen.key}/json`;
-
-  conn = await r.connect(config.db);
-  log(chalk.gray('Connection opened'));
 
   log('Fetching palen ...');
   const now = new Date();
@@ -86,13 +80,8 @@ async function updatestatus() {
       outputBuffer.push(`-> ${stopped} stopped!`);
       // Remove each stopped actie.
       for(let i = 0; i < stopped; i++) {
-        let toRemoveId = currentOplaadActies[0];
+        const toRemoveId = currentOplaadActies[0];
         currentOplaadActies = currentOplaadActies.slice(1);
-        // Legacy.
-        if (toRemoveId.id) {
-          console.log('Legacy!');
-          toRemoveId = toRemoveId.id;
-        }
         await oplaadacties.get(toRemoveId).update({ end: now }).run(conn);
       }
       // Save the paal.
@@ -114,9 +103,6 @@ async function updatestatus() {
       status: statussesToInsert,
     }).run(conn);
   }
-
-  await conn.close();
-  log(chalk.gray('Connection closed'));
 }
 
-run(updatestatus, conn);
+run(updatestatus);

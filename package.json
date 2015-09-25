@@ -10,7 +10,7 @@
     "rethinkdb": "^2.1.1"
   },
   "devDependencies": {
-    "eslint": "^1.4.1"
+    "eslint": "^1.5.1"
   },
   "license": "ISC",
   "main": "index.js",
@@ -21,6 +21,7 @@
     "test": "echo 'Nope'",
     "setupdb": "src/bin/setupdb.js",
     "update-oplaadpalen": "src/bin/update-oplaadpalen.js",
-    "update-status": "src/bin/update-status.js"
+    "update-status": "src/bin/update-status.js",
+    "lint": "eslint src"
   }
 }

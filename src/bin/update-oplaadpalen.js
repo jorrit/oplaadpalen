@@ -5,13 +5,9 @@ const config = require('../../config.json');
 const chalk = require('chalk');
 import { log, run } from './base.js';
 
-let conn;
-
-async function updateoplaadpalen() {
+async function updateoplaadpalen(conn) {
   const url = `http://oplaadpalen.nl/api/chargingpoints/${config.oplaadpalen.key}/json?box=${config.oplaadpalen.box.bottomleft},${config.oplaadpalen.box.topright}`;
 
-  conn = await r.connect(config.db);
-  log(chalk.grey('Connection opened'));
   const table = await r.db(config.db.db).table('palen');
 
   let apiPalen = await r.http(url).run(conn);
@@ -54,9 +50,6 @@ async function updateoplaadpalen() {
   }
 
   await table.sync().run(conn);
-
-  await conn.close();
-  log(chalk.grey('Connection closed'));
 }
 
-run(updateoplaadpalen, conn);
+run(updateoplaadpalen);
